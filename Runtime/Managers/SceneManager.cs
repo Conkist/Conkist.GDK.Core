@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.ResourceProviders;
 using Cysharp.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace Conkist.GDK
 {
@@ -9,14 +10,15 @@ namespace Conkist.GDK
     {
 
         private static SceneInstance activeScene;
+        private static List<SceneInstance> loadedScenes = new List<SceneInstance>();
 
-        public static async UniTask<SceneInstance> LoadSceneAsync(string sceneToLoad, LoadType loadType = LoadType.FullScreen)
+        public static async UniTask<SceneInstance> LoadSceneAsync(string sceneToLoad, LoadType loadType = LoadType.FullScreen, string loadingCanvasKey = null)
         {
             if(LoadingManager.IsLoading){
                 Debug.LogWarning("Manager is currently loading something");
                 return activeScene;
             }
-            LoadingManager.StartupLoading(sceneToLoad, loadType);
+            LoadingManager.StartupLoading(sceneToLoad, loadType, loadingCanvasKey);
 
             //Application.backgroundLoadingPriority = ThreadPriority.High;
             var loader = Addressables.LoadSceneAsync(sceneToLoad);
@@ -26,6 +28,8 @@ namespace Conkist.GDK
                 LoadingManager.ChangeLoadingState(LoadingStates.DestinationSceneActivation);
             };
             var scene = await loader;
+            loadedScenes = new List<SceneInstance>();
+            loadedScenes.Add(scene);
 
             LoadingManager.ChangeLoadingState(LoadingStates.ExitFade);
             LoadingManager._isLoading = false;
@@ -33,13 +37,13 @@ namespace Conkist.GDK
             return scene;
         }
 
-        public static async UniTask<SceneInstance> LoadSceneAsync(AssetReference sceneToLoad, LoadType loadType = LoadType.FullScreen)
+        public static async UniTask<SceneInstance> LoadSceneAsync(AssetReference sceneToLoad, LoadType loadType = LoadType.FullScreen, string loadingCanvasKey = null)
         {
             if(LoadingManager.IsLoading){
                 Debug.LogWarning("Manager is currently loading something");
                 return activeScene;
             }
-            LoadingManager.StartupLoading(sceneToLoad.AssetGUID, loadType);
+            LoadingManager.StartupLoading(sceneToLoad.AssetGUID, loadType, loadingCanvasKey);
 
             //Application.backgroundLoadingPriority = ThreadPriority.High;
             var loader = Addressables.LoadSceneAsync(sceneToLoad);
@@ -49,6 +53,8 @@ namespace Conkist.GDK
                 LoadingManager.ChangeLoadingState(LoadingStates.DestinationSceneActivation);
             };
             var scene = await loader;
+            loadedScenes = new List<SceneInstance>();
+            loadedScenes.Add(scene);
 
             LoadingManager.ChangeLoadingState(LoadingStates.ExitFade);
             LoadingManager._isLoading = false;
@@ -77,6 +83,7 @@ namespace Conkist.GDK
                 OnCompleteAdditiveLoadOp(op.Result, forceMultiload: true, activate);
             };
             var scene = await loader;
+            loadedScenes.Add(scene);
 
             LoadingManager.ChangeLoadingState(LoadingStates.ExitFade);
             LoadingManager._isLoading = false;
@@ -106,6 +113,7 @@ namespace Conkist.GDK
                 OnCompleteAdditiveLoadOp(op.Result, forceMultiload, activate);
             };
             var scene = await loader;
+            loadedScenes.Add(scene);
 
             LoadingManager.ChangeLoadingState(LoadingStates.ExitFade);
             LoadingManager._isLoading = false;
@@ -163,7 +171,27 @@ namespace Conkist.GDK
         /// <returns></returns>
         public static async UniTask RemoveScene(SceneInstance scene, bool autoRelease = true, LoadType loadType = LoadType.Hidden)
         {
+            if(LoadingManager.IsLoading){
+                Debug.LogWarning("Manager is currently loading something");
+                return;
+            }
+            if(loadedScenes.Count <= 1)
+            {
+                Debug.LogWarning("No loaded scenes to unload");
+                return;
+            }
+            LoadingManager._isLoading = true;
+
             await Addressables.UnloadSceneAsync(scene, autoReleaseHandle: autoRelease);
+            loadedScenes.Remove(scene);
+
+            if(activeScene.Scene == scene.Scene)
+            {
+                activeScene = loadedScenes[0];
+                UnityEngine.SceneManagement.SceneManager.SetActiveScene(activeScene.Scene);
+            }
+
+            LoadingManager._isLoading = false;
         }
 
         public static void CreateScene(string v)

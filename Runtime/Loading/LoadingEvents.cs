@@ -141,5 +141,25 @@ namespace Conkist.GDK
             
             public static void Trigger() { EventManager.TriggerEvent(ev); }
         }
+
+        public struct LoadingCanvasSetEvent
+        {
+            public string loadingCanvasKey;
+
+            public LoadingCanvasSetEvent(string loadingCanvasKey)
+            {
+                this.loadingCanvasKey = loadingCanvasKey;
+            }
+        }
+
+        public struct SceneRemovedEvent
+        {
+            public string sceneName;
+
+            public SceneRemovedEvent(string sceneName)
+            {
+                this.sceneName = sceneName;
+            }
+        }
     }
 }

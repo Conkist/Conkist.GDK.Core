@@ -48,8 +48,7 @@ namespace Conkist.GDK.Loading
         public void OnEventCallback(LoadingEvents.LoadingStartEvent ev)
         {
             loadType = ev.loadType;
-
-            OnLoadStarted(ev.loadingAssetAddress);
+            OnLoadStarted(ev.loadingAssetAddress).Forget();
         }
         public void OnEventCallback(LoadingEvents.LoadProgressUpdateEvent ev) => LoadProgress(ev.progress);
         public void OnEventCallback(LoadingEvents.DownloadStatusUpdateEvent ev) => DownloadProgress(ev.status);

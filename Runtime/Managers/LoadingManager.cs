@@ -221,7 +221,7 @@ namespace Conkist.GDK
             LoadingEvents.LoadingStateChangeEvent.Trigger(_loadAddress, states);
         }
 
-        internal static void StartupLoading(string address, LoadType loadType, bool ignoreEventsOnHidden = true)
+        internal static void StartupLoading(string address, LoadType loadType, string loadingCanvasKey = null, bool ignoreEventsOnHidden = true)
         {
             _isLoading = true;
             _loadAddress = address;
@@ -229,6 +229,7 @@ namespace Conkist.GDK
 
             ChangeLoadType(loadType);
             ChangeLoadingState(LoadingStates.LoadStarted);
+            EventManager.TriggerEvent(new LoadingEvents.LoadingCanvasSetEvent(loadingCanvasKey));
             EventManager.TriggerEvent(new LoadingEvents.LoadingStartEvent(address, loadType));
         }
 
