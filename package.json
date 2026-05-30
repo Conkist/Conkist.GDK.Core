@@ -1,10 +1,10 @@
 {
-  "name": "me.conkist.gdk",
+  "name": "me.conkist.gdk.core",
   "version": "0.1.0",
-  "displayName": "Conkist.GDK",
+  "displayName": "Conkist GDK Core",
   "description": "Package that contains a set of editor scripts to optimize game development",
-  "unity": "2022.3",
-  "unityRelease": "26f1",
+  "unity": "6000.3",
+  "unityRelease": "14f1",
   "documentationUrl": "https://docs.conkist.me/packages/tools.html",
   "changelogUrl": "https://docs.conkist.me/packages/tools/changelog.html",
   "licensesUrl": "https://conkist.notion.site/Licensing-5b4194f03e48417da78fa2047cb0dea9",
@@ -15,8 +15,8 @@
   ],
   "author": {
     "name": "Conkist",
-    "email": "renato.conkist@gmail.com",
-    "url": "https://www.conkist.me/"
+    "url": "https://www.conkist.me/",
+    "email": "mail@conkist.me"
   },
   "samples": [
     {
@@ -26,7 +26,8 @@
     }
   ],
   "type": "tool",
-    "dependencies": {
-        "com.cysharp.unitask": "2.5.5"
-    }
+  "dependencies": {
+    "com.cysharp.unitask": "2.5.11",
+    "com.unity.addressables": "2.9.1"
+  }
 }
