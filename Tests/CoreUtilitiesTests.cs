@@ -8,7 +8,7 @@ namespace Conkist.GDK.Tests
 {
     public class CoreUtilitiesTests
     {
-        private class TestPureClass : PureSingletonBehaviour<TestPureClass>
+        private class TestPureClass : PureSingleton<TestPureClass>
         {
             public int Value = 42;
         }

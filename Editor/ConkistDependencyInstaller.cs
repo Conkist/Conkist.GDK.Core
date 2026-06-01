@@ -26,7 +26,7 @@ namespace Conkist.GDK.Editor
         private static readonly DependencyData[] RequiredDependencies = new[]
         {
             new DependencyData("com.cysharp.unitask", "https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask#2.5.11"),
-            new DependencyData("com.svermeulen.extenject", "com.svermeulen.extenject"), // Resolved via programmatic OpenUPM scoped registry
+            new DependencyData("jp.hadashikick.vcontainer", "jp.hadashikick.vcontainer"), // Resolved via programmatic OpenUPM scoped registry
             new DependencyData("com.unity.nuget.newtonsoft-json", "com.unity.nuget.newtonsoft-json"),
             new DependencyData("com.unity.addressables", "com.unity.addressables"),
             new DependencyData("com.unity.entities", "com.unity.entities"),
@@ -38,7 +38,7 @@ namespace Conkist.GDK.Editor
 
         static ConkistDependencyInstaller()
         {
-            // Register OpenUPM programmatically first to ensure clean Extenject resolution
+            // Register OpenUPM programmatically first to ensure clean VContainer resolution
             EnsureOpenUPMRegistry();
 
             // Trigger check and sequential installation
@@ -66,7 +66,7 @@ namespace Conkist.GDK.Editor
                     int openBracketIndex = text.IndexOf("[", arrayStartIndex);
                     if (openBracketIndex >= 0)
                     {
-                        string newRegistry = "\n    {\n      \"name\": \"package.openupm.com\",\n      \"url\": \"https://package.openupm.com\",\n      \"scopes\": [\n        \"com.svermeulen.extenject\"\n      ]\n    },";
+                        string newRegistry = "\n    {\n      \"name\": \"package.openupm.com\",\n      \"url\": \"https://package.openupm.com\",\n      \"scopes\": [\n        \"jp.hadashikick.vcontainer\"\n      ]\n    },";
                         text = text.Insert(openBracketIndex + 1, newRegistry);
                     }
                 }
@@ -76,7 +76,7 @@ namespace Conkist.GDK.Editor
                     int firstBraceIndex = text.IndexOf('{');
                     if (firstBraceIndex >= 0)
                     {
-                        string registryBlock = "\n  \"scopedRegistries\": [\n    {\n      \"name\": \"package.openupm.com\",\n      \"url\": \"https://package.openupm.com\",\n      \"scopes\": [\n        \"com.svermeulen.extenject\"\n      ]\n    }\n  ],";
+                        string registryBlock = "\n  \"scopedRegistries\": [\n    {\n      \"name\": \"package.openupm.com\",\n      \"url\": \"https://package.openupm.com\",\n      \"scopes\": [\n        \"jp.hadashikick.vcontainer\"\n      ]\n    }\n  ],";
                         text = text.Insert(firstBraceIndex + 1, registryBlock);
                     }
                 }
