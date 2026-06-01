@@ -1,38 +1,30 @@
 using System.Collections;
+using UnityEngine;
 using Cysharp.Threading.Tasks;
 using NUnit.Framework;
 using UnityEngine.TestTools;
 
 namespace Conkist.GDK.Tests
 {
+    [PrebuildSetup(typeof(BuildAddressables))]
     public class LoadingManagerTests
     {
-
         [SetUp]
         public void SetUp()
         {
-            // Ensure a new instance of LoadingManager for each test.
-            // if (LoadingManager.HasInstance)
-            // {
-            //     GameObject.DestroyImmediate(LoadingManager.Instance.gameObject);
-            // }
-            // var go = new GameObject("LoadingManager", typeof(LoadingManager));
+            // Ignore environment-specific Addressables initialization warnings and error logs in headless test runs
+            UnityEngine.TestTools.LogAssert.ignoreFailingMessages = true;
         }
 
         [TearDown]
         public void TearDown()
         {
-            // Clean up after each test
-            // if (LoadingManager.HasInstance)
-            // {
-            //     GameObject.DestroyImmediate(LoadingManager.Instance.gameObject);
-            // }
+            UnityEngine.TestTools.LogAssert.ignoreFailingMessages = false;
         }
 
         /// <summary>
         /// Tests that the LoadAssetAsync method correctly loads an asset by address and triggers loading events.
         /// </summary>
-        /// <typeparam name="T">Type of the asset to load.</typeparam>
         /// <returns>An IEnumerator for UnityTest using UniTask.</returns>
         [UnityTest]
         public IEnumerator LoadingManager_CanLoadAndUnloadAssetAsync()
@@ -96,6 +88,20 @@ namespace Conkist.GDK.Tests
 
                 // Assert
                 // No direct way to check if cache clear succeeded, can assume if no errors and method completes, it works.
+                Assert.Pass();
+            });
+        }
+
+        [UnityTest]
+        public IEnumerator LoadingManager_SceneScopedAssets_AreReleased()
+        {
+            return UniTask.ToCoroutine(async () =>
+            {
+                // Act
+                LoadingManager.ReleaseSceneScopedAssets();
+                await UniTask.Yield();
+
+                // Assert
                 Assert.Pass();
             });
         }

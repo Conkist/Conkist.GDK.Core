@@ -2,8 +2,11 @@ using System;
 
 namespace Conkist.GDK.Loading
 {
-    public interface ITrackableProgress<out T> : IDisposable
+    /// <summary>
+    /// Interface for tracking download/load progress reporting.
+    /// </summary>
+    public interface ITrackableProgress<TProgress>
     {
-        void TrackProgress(IProgress<T> progress);
+        void TrackProgress(IProgress<TProgress> progress);
     }
 }

@@ -36,7 +36,7 @@ Para adicionar o Conkist GDK Core ao seu projeto Unity, adicione a seguinte linh
 using Conkist.GDK;
 using UnityEngine;
 
-public class GameManager : Singleton<GameManager>
+public class GameManager : SingletonBehaviour<GameManager>
 {
     protected override void Awake()
     {

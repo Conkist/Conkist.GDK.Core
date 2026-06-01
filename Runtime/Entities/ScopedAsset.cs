@@ -1,42 +1,66 @@
 using System;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement.AsyncOperations;
+using Cysharp.Threading.Tasks;
 using Object = UnityEngine.Object;
 
 namespace Conkist.GDK
 {
     /// <summary>
-    /// A class for managing the lifecycle of a transient instance of a ScriptableObject.
-    /// The instance is created when accessed and destroyed when disposed.
+    /// A class for managing the lifecycle of a transient instance of a ScriptableObject loaded via Addressables.
+    /// The instance is created on first access and destroyed along with its Addressable handle when disposed.
     /// </summary>
     /// <typeparam name="TAsset">The type of the ScriptableObject.</typeparam>
     [Serializable]
     public class ScopedAsset<TAsset> : IDisposable where TAsset : ScriptableObject
     {
         [SerializeField]
-        [Tooltip("The original asset to instantiate from.")]
-        private TAsset _asset;
+        [Tooltip("The addressable reference to instantiate from.")]
+        private AssetReferenceT<TAsset> _assetReference;
 
-        // Holds the instantiated asset
+        private AsyncOperationHandle<TAsset> _loadHandle;
         private TAsset _instance;
 
         /// <summary>
-        /// Gets the instance of the asset. If the instance does not exist, it is created.
+        /// Gets the cached clone instance. Returns null if not yet loaded.
         /// </summary>
-        public TAsset Asset
-        {
-            get
-            {
-                if (_instance == null)
-                {
-                    _instance = Object.Instantiate(_asset);
-                }
+        public TAsset Instance => _instance;
 
-                return _instance;
+        /// <summary>
+        /// Gets a value indicating whether the scoped asset is loaded and instantiated.
+        /// </summary>
+        public bool IsLoaded => _instance != null;
+
+        /// <summary>
+        /// Asynchronously loads the source asset and retrieves/instantiates the cached scoped instance.
+        /// </summary>
+        public async UniTask<TAsset> GetAssetAsync()
+        {
+            if (_instance != null) return _instance;
+
+            if (_assetReference == null)
+            {
+                Debug.LogError("[ScopedAsset] AssetReference is null!");
+                return null;
             }
+
+            if (!_loadHandle.IsValid())
+            {
+                _loadHandle = Addressables.LoadAssetAsync<TAsset>(_assetReference);
+            }
+
+            TAsset source = await _loadHandle;
+            if (source != null && _instance == null)
+            {
+                _instance = Object.Instantiate(source);
+            }
+
+            return _instance;
         }
 
         /// <summary>
-        /// Disposes the instance of the asset by destroying it.
+        /// Disposes the instance of the asset by destroying it and releasing its Addressable handle.
         /// </summary>
         public void Dispose()
         {
@@ -45,16 +69,11 @@ namespace Conkist.GDK
                 Object.Destroy(_instance);
                 _instance = null;
             }
-        }
 
-        /// <summary>
-        /// Implicitly converts a ScopedAsset instance to the underlying asset type.
-        /// Provides the managed instance of the asset.
-        /// </summary>
-        /// <param name="scopedAsset">The ScopedAsset instance to convert.</param>
-        public static implicit operator TAsset(ScopedAsset<TAsset> scopedAsset)
-        {
-            return scopedAsset.Asset;
+            if (_loadHandle.IsValid())
+            {
+                Addressables.Release(_loadHandle);
+            }
         }
     }
 }

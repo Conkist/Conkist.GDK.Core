@@ -7,14 +7,14 @@ using Cysharp.Threading.Tasks;
 namespace Conkist.GDK.Tests
 {
     /// <summary>
-    /// Unit tests for the Singleton<T> class.
+    /// Unit tests for the SingletonBehaviour<T> class.
     /// </summary>
     public class SingletonTests
     {
         /// <summary>
         /// A sample derived Singleton class used for testing.
         /// </summary>
-        private class TestSingleton : Singleton<TestSingleton>
+        private class TestSingleton : SingletonBehaviour<TestSingleton>
         {
         }
 
@@ -85,6 +85,7 @@ namespace Conkist.GDK.Tests
 
                 // Allow a frame to pass to let Awake() method execute
                 await UniTask.Yield();
+                await UniTask.DelayFrame(5); // Wait a few frames for deferred destruction to process
 
                 // Assert
                 Assert.IsTrue(go1 == null || go1.Equals(null));

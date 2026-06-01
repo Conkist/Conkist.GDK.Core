@@ -1,0 +1,2 @@
+Place your custom Unity component gizmo icon textures in this folder.
+Unity will automatically load them when drawing gizmos with corresponding script names.

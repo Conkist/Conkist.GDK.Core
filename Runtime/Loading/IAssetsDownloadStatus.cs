@@ -1,7 +1,12 @@
+using System;
+
 namespace Conkist.GDK.Loading
 {
-    public interface IAssetsDownloadStatus<TDownloadStatus>
+    /// <summary>
+    /// Interface for querying the current assets download status.
+    /// </summary>
+    public interface IAssetsDownloadStatus<out TStatus> : IDisposable
     {
-        TDownloadStatus DownloadStatus { get; }
+        TStatus DownloadStatus { get; }
     }
 }

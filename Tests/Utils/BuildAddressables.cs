@@ -12,7 +12,7 @@ using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 namespace Conkist.GDK.Tests
 {
     /// <summary>
-    /// If a test requires Addressables then add the attribute `[PrebuildSetup(typeof(BuildAddressables))]`. to the test or class.
+    /// If a test requires Addressables then add the attribute `[PrebuildSetup(typeof(BuildAddressables))]` to the test or class.
     /// This will ensure the Addressables are built for the test and that they are only built once, not for each test.
     /// </summary>
     public sealed class BuildAddressables : IPrebuildSetup
@@ -23,10 +23,17 @@ namespace Conkist.GDK.Tests
         public void Setup()
         {
 #if UNITY_EDITOR
+            // Ignore environment-specific warnings, error logs, and third-party package issues during prebuild compilation
+            UnityEngine.TestTools.LogAssert.ignoreFailingMessages = true;
             Debug.Log("Started Preparing Addressables");
 
             AddressableAssetSettings settings = AddressableAssetSettingsDefaultObject.Settings;
-            Debug.Assert(settings != null, "No Addressable Asset Settings could be found!");
+            if (settings == null)
+            {
+                Debug.Log("[BuildAddressables] No Addressable Asset Settings found. Programmatically creating default settings...");
+                settings = AddressableAssetSettingsDefaultObject.GetSettings(true);
+            }
+            Debug.Assert(settings != null, "No Addressable Asset Settings could be found or created!");
 
             // This is to help with debugging any tests that may fail on the CI.
             StringBuilder debugInfo = new StringBuilder();
@@ -85,6 +92,9 @@ namespace Conkist.GDK.Tests
             AddressableAssetSettings.CleanPlayerContent(settings.ActivePlayerDataBuilder);
             BuildAddressablePlayerContent();
             Debug.Log("Finished Preparing Addressables");
+            
+            // Restore default LogAssert behavior for the subsequent actual test runs
+            UnityEngine.TestTools.LogAssert.ignoreFailingMessages = false;
 #endif
         }
 

@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 namespace Conkist.GDK
 {
@@ -8,7 +8,7 @@ namespace Conkist.GDK
     /// </summary>
     /// <typeparam name="T">Type of the component inheriting from this Singleton class.</typeparam>
     [DefaultExecutionOrder(-100)]
-    public class Singleton<T> : MonoBehaviour where T : Component
+    public class SingletonBehaviour<T> : MonoBehaviour where T : Component
     {
         // The singleton instance
         protected static T _instance;
@@ -76,7 +76,7 @@ namespace Conkist.GDK
             }
             else if (_instance != this)
             {
-                if (_instance is Singleton<T> existingInstance && existingInstance.keepOldest)
+                if (_instance is SingletonBehaviour<T> existingInstance && existingInstance.keepOldest)
                 {
                     Destroy(gameObject);
                 }
@@ -100,5 +100,15 @@ namespace Conkist.GDK
                 DontDestroyOnLoad(_instance.gameObject);
             }
         }
+    }
+
+    /// <summary>
+    /// A generic pure C# base class for standard classes (non-MonoBehaviour) using lazy initialization.
+    /// </summary>
+    /// <typeparam name="T">Type of the class inheriting from this PureSingleton class.</typeparam>
+    public class PureSingletonBehaviour<T> where T : class, new()
+    {
+        private static readonly System.Lazy<T> _lazyInstance = new System.Lazy<T>(() => new T());
+        public static T Instance => _lazyInstance.Value;
     }
 }

@@ -23,6 +23,26 @@
       "displayName": "Conkist Logo",
       "description": "Company logo to use in splash screen",
       "path": "Samples~/Conkist Logo"
+    },
+    {
+      "displayName": "Audio Demo",
+      "description": "Demonstrates the AudioManager, AudioTrigger, and MusicController with an AudioMixer and Object Pooling.",
+      "path": "Samples~/Audio"
+    },
+    {
+      "displayName": "Singleton Demo",
+      "description": "Demonstrates pure and persistent singletons and their lifecycle in Unity.",
+      "path": "Samples~/Singleton"
+    },
+    {
+      "displayName": "Game States Demo",
+      "description": "Demonstrates the GameStateManager and EventManager transitions.",
+      "path": "Samples~/GameStates"
+    },
+    {
+      "displayName": "Loading Demo",
+      "description": "Demonstrates the LoadingManager and async scene transitions.",
+      "path": "Samples~/Loading"
     }
   ],
   "type": "tool",
