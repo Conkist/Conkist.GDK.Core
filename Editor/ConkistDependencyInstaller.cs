@@ -26,7 +26,7 @@ namespace Conkist.GDK.Editor
         private static readonly DependencyData[] RequiredDependencies = new[]
         {
             new DependencyData("com.cysharp.unitask", "https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask#2.5.11"),
-            new DependencyData("jp.hadashikick.vcontainer", "jp.hadashikick.vcontainer"), // Resolved via programmatic OpenUPM scoped registry
+            new DependencyData("jp.hadashikick.vcontainer", "jp.hadashikick.vcontainer"),
             new DependencyData("com.unity.nuget.newtonsoft-json", "com.unity.nuget.newtonsoft-json"),
             new DependencyData("com.unity.addressables", "com.unity.addressables"),
             new DependencyData("com.unity.entities", "com.unity.entities"),
