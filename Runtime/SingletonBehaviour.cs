@@ -100,5 +100,13 @@ namespace Conkist.GDK
                 DontDestroyOnLoad(_instance.gameObject);
             }
         }
+
+        protected virtual void OnDestroy()
+        {
+            if (_instance == this)
+            {
+                _instance = null;
+            }
+        }
     }
 }

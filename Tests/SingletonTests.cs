@@ -11,6 +11,27 @@ namespace Conkist.GDK.Tests
     /// </summary>
     public class SingletonTests
     {
+        [SetUp]
+        public void SetUp()
+        {
+            DoCleanup();
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            DoCleanup();
+        }
+
+        private void DoCleanup()
+        {
+            var singletons = Object.FindObjectsOfType<TestSingleton>();
+            foreach (var singleton in singletons)
+            {
+                Object.DestroyImmediate(singleton.gameObject);
+            }
+        }
+
         /// <summary>
         /// A sample derived Singleton class used for testing.
         /// </summary>

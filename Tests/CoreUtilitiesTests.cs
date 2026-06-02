@@ -8,6 +8,34 @@ namespace Conkist.GDK.Tests
 {
     public class CoreUtilitiesTests
     {
+        [SetUp]
+        public void SetUp()
+        {
+            ResetSingletons();
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            ResetSingletons();
+        }
+
+        private void ResetSingletons()
+        {
+            ResetStaticInstance<AudioManager>();
+            ResetStaticInstance<GameStateManager>();
+            ResetStaticInstance<TestPersistentClass>();
+        }
+
+        private void ResetStaticInstance<T>() where T : Component
+        {
+            var field = typeof(SingletonBehaviour<T>).GetField("_instance", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+            if (field != null)
+            {
+                field.SetValue(null, null);
+            }
+        }
+
         private class TestPureClass : PureSingleton<TestPureClass>
         {
             public int Value = 42;
@@ -63,7 +91,7 @@ namespace Conkist.GDK.Tests
                 Assert.AreEqual("Persistent", TestPersistentClass.Instance.Data);
 
                 // Clean up
-                Object.Destroy(go);
+                Object.DestroyImmediate(go);
                 await UniTask.Yield();
             });
         }
@@ -91,7 +119,7 @@ namespace Conkist.GDK.Tests
 
                 // Clean up
                 listener.Unsubscribe();
-                Object.Destroy(go);
+                Object.DestroyImmediate(go);
                 await UniTask.Yield();
             });
         }
@@ -114,7 +142,7 @@ namespace Conkist.GDK.Tests
                 Assert.IsFalse(source.isPlaying);
 
                 // Clean up
-                Object.Destroy(go);
+                Object.DestroyImmediate(go);
                 await UniTask.Yield();
             });
         }
@@ -136,8 +164,8 @@ namespace Conkist.GDK.Tests
                 Assert.Pass();
 
                 // Clean up
-                Object.Destroy(managerGo);
-                Object.Destroy(triggerGo);
+                Object.DestroyImmediate(managerGo);
+                Object.DestroyImmediate(triggerGo);
                 await UniTask.Yield();
             });
         }
@@ -167,8 +195,8 @@ namespace Conkist.GDK.Tests
                 Assert.AreEqual(activeSource.transform, defaultSource);
 
                 // Clean up
-                Object.Destroy(managerGo);
-                Object.Destroy(musicControllerGo);
+                Object.DestroyImmediate(managerGo);
+                Object.DestroyImmediate(musicControllerGo);
                 await UniTask.Yield();
             });
         }
@@ -203,9 +231,9 @@ namespace Conkist.GDK.Tests
                 Assert.IsTrue(source.isPlaying, "Target AudioSource should be playing the clip");
 
                 // Clean up
-                Object.Destroy(triggerGo);
-                Object.Destroy(targetGo);
-                Object.Destroy(clip);
+                Object.DestroyImmediate(triggerGo);
+                Object.DestroyImmediate(targetGo);
+                Object.DestroyImmediate(clip);
                 await UniTask.Yield();
             });
         }

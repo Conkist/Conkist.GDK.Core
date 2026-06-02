@@ -59,13 +59,18 @@ namespace Conkist.GDK.Tests
                 string address = "test-content";
                 bool inCache = false;
 
-                await LoadingManager.InCacheAsync(address);
+                // Act & Assert
+                // Addressables.GetDownloadSizeAsync will log an InvalidKeyException for the non-existent address "test-content".
+                LogAssert.Expect(LogType.Error, new System.Text.RegularExpressions.Regex("InvalidKeyException"));
+                inCache = await LoadingManager.InCacheAsync(address);
                 Assert.IsFalse(inCache);
 
+                LogAssert.Expect(LogType.Error, new System.Text.RegularExpressions.Regex("InvalidKeyException"));
+                LogAssert.Expect(LogType.Error, new System.Text.RegularExpressions.Regex("Exception caught while downloading content"));
                 await LoadingManager.DownloadContentAsync(address, LoadType.Hidden);
                 Assert.Pass();
 
-                await LoadingManager.InCacheAsync(address);
+                inCache = await LoadingManager.InCacheAsync(address);
                 Assert.IsTrue(inCache);
             });
         }

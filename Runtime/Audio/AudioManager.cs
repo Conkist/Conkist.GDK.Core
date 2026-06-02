@@ -491,7 +491,7 @@ namespace Conkist.GDK
 
         #region Cleanup
 
-        private void OnDestroy()
+        protected override void OnDestroy()
         {
             if (Instance == this)
             {
@@ -501,6 +501,7 @@ namespace Conkist.GDK
                 }
                 _loadedAddressableKeys.Clear();
             }
+            base.OnDestroy();
         }
 
         #endregion

@@ -63,23 +63,37 @@ namespace Conkist.GDK
             StartupLoading(address, loadType);
 
             Object asset = null;
-            if (_loadedHandles.TryGetValue(address, out var existingHandle))
+            try
             {
-                _refCounts[address]++;
-                asset = existingHandle.Result as Object;
+                if (_loadedHandles.TryGetValue(address, out var existingHandle))
+                {
+                    _refCounts[address]++;
+                    asset = existingHandle.Result as Object;
+                }
+                else
+                {
+                    var handle = Addressables.LoadAssetAsync<Object>(address);
+                    _loadedHandles.Add(address, handle);
+                    _refCounts.Add(address, 1);
+                    _sceneScopedKeys.Add(address);
+
+                    asset = await handle;
+                }
+
+                ChangeLoadingState(LoadingStates.InterpolatedLoadProgressComplete);
             }
-            else
+            catch (System.Exception ex)
             {
-                var handle = Addressables.LoadAssetAsync<Object>(address);
-                _loadedHandles.Add(address, handle);
-                _refCounts.Add(address, 1);
-                _sceneScopedKeys.Add(address);
-
-                asset = await handle;
+                Debug.LogError($"[LoadingManager] Exception caught while loading asset at address '{address}': {ex.Message}");
+                _loadedHandles.Remove(address);
+                _refCounts.Remove(address);
+                _sceneScopedKeys.Remove(address);
+                asset = null;
             }
-
-            _isLoading = false;
-            ChangeLoadingState(LoadingStates.InterpolatedLoadProgressComplete);
+            finally
+            {
+                _isLoading = false;
+            }
 
             return asset;
         }
@@ -100,23 +114,37 @@ namespace Conkist.GDK
             StartupLoading(key, loadType);
 
             Object asset = null;
-            if (_loadedHandles.TryGetValue(key, out var existingHandle))
+            try
             {
-                _refCounts[key]++;
-                asset = existingHandle.Result as Object;
+                if (_loadedHandles.TryGetValue(key, out var existingHandle))
+                {
+                    _refCounts[key]++;
+                    asset = existingHandle.Result as Object;
+                }
+                else
+                {
+                    var handle = Addressables.LoadAssetAsync<Object>(assetReference);
+                    _loadedHandles.Add(key, handle);
+                    _refCounts.Add(key, 1);
+                    _sceneScopedKeys.Add(key);
+
+                    asset = await handle;
+                }
+
+                ChangeLoadingState(LoadingStates.InterpolatedLoadProgressComplete);
             }
-            else
+            catch (System.Exception ex)
             {
-                var handle = Addressables.LoadAssetAsync<Object>(assetReference);
-                _loadedHandles.Add(key, handle);
-                _refCounts.Add(key, 1);
-                _sceneScopedKeys.Add(key);
-
-                asset = await handle;
+                Debug.LogError($"[LoadingManager] Exception caught while loading asset reference '{key}': {ex.Message}");
+                _loadedHandles.Remove(key);
+                _refCounts.Remove(key);
+                _sceneScopedKeys.Remove(key);
+                asset = null;
             }
-
-            _isLoading = false;
-            ChangeLoadingState(LoadingStates.InterpolatedLoadProgressComplete);
+            finally
+            {
+                _isLoading = false;
+            }
             return asset;
         }
 
@@ -225,27 +253,37 @@ namespace Conkist.GDK
             }
             StartupLoading(address, loadType);
 
-            long size = await Addressables.GetDownloadSizeAsync(address);
-
-            if (size > 0)
+            try
             {
-                await UniTask.NextFrame();
+                long size = await Addressables.GetDownloadSizeAsync(address);
 
-                var download = Addressables.DownloadDependenciesAsync(address)
-                    .ToUniTask(Progress.Create<float>(LoadProgress));
-                await download;
-
-                if (!download.Status.IsCompleted())
+                if (size > 0)
                 {
-                    download = Addressables.DownloadDependenciesAsync(address)
-                    .ToUniTask(Progress.Create<float>(LoadProgress));
-                    await download;
-                }
+                    await UniTask.NextFrame();
 
-                ChangeLoadingState(LoadingStates.LoadProgressComplete);
+                    var download = Addressables.DownloadDependenciesAsync(address)
+                        .ToUniTask(Progress.Create<float>(LoadProgress));
+                    await download;
+
+                    if (!download.Status.IsCompleted())
+                    {
+                        download = Addressables.DownloadDependenciesAsync(address)
+                        .ToUniTask(Progress.Create<float>(LoadProgress));
+                        await download;
+                    }
+
+                    ChangeLoadingState(LoadingStates.LoadProgressComplete);
+                    await UniTask.Delay(300, DelayType.Realtime);
+                    Addressables.Release(address);
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[LoadingManager] Exception caught while downloading content at address '{address}': {ex.Message}");
+            }
+            finally
+            {
                 _isLoading = false;
-                await UniTask.Delay(300, DelayType.Realtime);
-                Addressables.Release(address);
             }
         }
 
@@ -262,20 +300,31 @@ namespace Conkist.GDK
             }
             StartupLoading(assetLabels.ToString(), loadType);
 
-            var downloadPack = new AssetLabelsDownloadPack(assetLabels);
-
-            downloadPack.TrackProgress(Progress.Create<AssetsDownloadStatus>(DownloadProgress));
-            var result = await downloadPack.StartDownloadAsync();
-
-            if (!result.IsSuccess)
+            AssetLabelsDownloadPack downloadPack = null;
+            try
             {
-                result = await downloadPack.StartDownloadAsync();
-            }
+                downloadPack = new AssetLabelsDownloadPack(assetLabels);
 
-            ChangeLoadingState(LoadingStates.LoadProgressComplete);
-            _isLoading = false;
-            await UniTask.Delay(300, DelayType.Realtime);
-            downloadPack.Dispose();
+                downloadPack.TrackProgress(Progress.Create<AssetsDownloadStatus>(DownloadProgress));
+                var result = await downloadPack.StartDownloadAsync();
+
+                if (!result.IsSuccess)
+                {
+                    result = await downloadPack.StartDownloadAsync();
+                }
+
+                ChangeLoadingState(LoadingStates.LoadProgressComplete);
+                await UniTask.Delay(300, DelayType.Realtime);
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[LoadingManager] Exception caught while downloading content by label pack: {ex.Message}");
+            }
+            finally
+            {
+                if (downloadPack != null) downloadPack.Dispose();
+                _isLoading = false;
+            }
         }
 
         /// <summary>
@@ -284,15 +333,28 @@ namespace Conkist.GDK
         public static async UniTask PreloadAssetAsync(string address)
         {
             _isLoading = true;
-            if (!_loadedHandles.TryGetValue(address, out var handle))
+            try
             {
-                handle = Addressables.LoadAssetAsync<Object>(address);
-                _loadedHandles.Add(address, handle);
-                _refCounts.Add(address, 1);
-                _sceneScopedKeys.Add(address);
+                if (!_loadedHandles.TryGetValue(address, out var handle))
+                {
+                    handle = Addressables.LoadAssetAsync<Object>(address);
+                    _loadedHandles.Add(address, handle);
+                    _refCounts.Add(address, 1);
+                    _sceneScopedKeys.Add(address);
+                }
+                await handle;
             }
-            await handle;
-            _isLoading = false;
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[LoadingManager] Exception caught while preloading asset at address '{address}': {ex.Message}");
+                _loadedHandles.Remove(address);
+                _refCounts.Remove(address);
+                _sceneScopedKeys.Remove(address);
+            }
+            finally
+            {
+                _isLoading = false;
+            }
         }
 
         internal static void DownloadProgress(AssetsDownloadStatus status)

@@ -42,7 +42,15 @@ namespace Conkist.GDK.Factories
             // 1. Asynchronously load the prefab asset using the LoadingManager.
             // This leverages GDK's built-in asset cache, progress tracking, reference counting,
             // and scene-scoped automatic memory cleanup.
-            Object asset = await LoadingManager.LoadAssetAsync(_address);
+            Object asset = null;
+            try
+            {
+                asset = await LoadingManager.LoadAssetAsync(_address);
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[AddressablePrefabFactory<{typeof(T).Name}>] Exception caught while loading asset at address '{_address}': {ex.Message}");
+            }
             
             if (asset == null)
             {
@@ -87,7 +95,16 @@ namespace Conkist.GDK.Factories
                 return null;
             }
 
-            Object asset = await LoadingManager.LoadAssetAsync(_address);
+            Object asset = null;
+            try
+            {
+                asset = await LoadingManager.LoadAssetAsync(_address);
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[AddressablePrefabFactory<{typeof(T).Name}>] Exception caught while loading asset at address '{_address}': {ex.Message}");
+            }
+            
             if (asset == null)
             {
                 Debug.LogError($"[AddressablePrefabFactory<{typeof(T).Name}>] Failed to load prefab at address: {_address}");
