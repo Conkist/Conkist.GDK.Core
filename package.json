@@ -43,6 +43,11 @@
       "displayName": "Loading Demo",
       "description": "Demonstrates the LoadingManager and async scene transitions.",
       "path": "Samples~/Loading"
+    },
+    {
+      "displayName": "Overlay and Event Demo",
+      "description": "Demonstrates the OverlayManager and popup/loading overlays triggered by connectivity and UI events.",
+      "path": "Samples~/OverlayAndEvents"
     }
   ],
   "type": "tool",
