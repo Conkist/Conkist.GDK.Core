@@ -14,7 +14,21 @@
     "overrideReferences": false,
     "precompiledReferences": [],
     "autoReferenced": true,
-    "defineConstraints": [],
-    "versionDefines": [],
+    "defineConstraints": [
+        "CONKIST_UNITASK",
+        "CONKIST_VCONTAINER"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.cysharp.unitask",
+            "expression": "",
+            "define": "CONKIST_UNITASK"
+        },
+        {
+            "name": "jp.hadashikick.vcontainer",
+            "expression": "",
+            "define": "CONKIST_VCONTAINER"
+        }
+    ],
     "noEngineReferences": false
 }
