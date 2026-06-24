@@ -7,51 +7,41 @@ namespace Conkist.GDK.Editor
 {
     public static class ConkistProjectLinker
     {
-        private const string CoreGitUrl = "https://github.com/Conkist/Conkist.GDK.Core.git";
+        private const string ServicesGitUrl = "https://github.com/Conkist/Conkist.GDK.Services.git";
+        private const string SmartAgentsGitUrl = "https://github.com/Conkist/Conkist.GDK.SmartAgents.git";
 
-        [MenuItem("Conkist/GDK/Configure Adjacent Projects")]
-        public static void ConfigureAdjacentProjects()
+        [MenuItem("Conkist/GDK/Import Services and Smart Agents")]
+        public static void ImportAdditionalPackages()
         {
-            // Current project directory (e.g., /Users/renato/Conkist/Conkist GDK)
-            string currentProjDir = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-            // Parent directory containing all projects (e.g., /Users/renato/Conkist)
-            string parentDir = Path.GetFullPath(Path.Combine(currentProjDir, ".."));
+            string manifestPath = "Packages/manifest.json";
 
-            if (!Directory.Exists(parentDir))
+            if (!File.Exists(manifestPath))
             {
-                Debug.LogError($"[Conkist Linker] Parent directory not found: {parentDir}");
+                Debug.LogError($"[Conkist Linker] manifest.json not found in the current project: {manifestPath}");
                 return;
             }
 
-            string[] subDirectories = Directory.GetDirectories(parentDir);
-            int updatedCount = 0;
-
-            foreach (string dir in subDirectories)
+            try
             {
-                // Skip the current project directory
-                if (Path.GetFullPath(dir) == currentProjDir)
-                    continue;
-
-                string manifestPath = Path.Combine(dir, "Packages", "manifest.json");
-                if (File.Exists(manifestPath))
+                if (ConfigureProjectManifest(manifestPath))
                 {
-                    try
-                    {
-                        if (ConfigureProjectManifest(manifestPath))
-                        {
-                            updatedCount++;
-                            Debug.Log($"[Conkist Linker] Successfully configured manifest in: {dir}");
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Debug.LogError($"[Conkist Linker] Failed to configure project at {dir}: {ex.Message}");
-                    }
+                    Debug.Log("[Conkist Linker] Successfully configured manifest.json with Services and Smart Agents dependencies.");
+                    AssetDatabase.Refresh();
+                    EditorUtility.DisplayDialog("Conkist GDK", 
+                        "Successfully added GDK Services and Smart Agents to the project manifest.\nUnity will now download and compile them.", "OK");
+                }
+                else
+                {
+                    EditorUtility.DisplayDialog("Conkist GDK", 
+                        "GDK Services and Smart Agents are already configured in this project.", "OK");
                 }
             }
-
-            EditorUtility.DisplayDialog("Conkist Project Linker", 
-                $"Adjacent projects configuration complete!\nUpdated projects: {updatedCount}", "OK");
+            catch (Exception ex)
+            {
+                Debug.LogError($"[Conkist Linker] Failed to configure project manifest: {ex.Message}");
+                EditorUtility.DisplayDialog("Conkist GDK Error", 
+                    $"Failed to configure project manifest: {ex.Message}", "OK");
+            }
         }
 
         private static bool ConfigureProjectManifest(string manifestPath)
@@ -86,14 +76,27 @@ namespace Conkist.GDK.Editor
                 }
             }
 
-            // 2. Add me.conkist.gdk.core dependency if missing
-            if (!jsonText.Contains("\"me.conkist.gdk.core\""))
+            // 2. Add me.conkist.gdk.services dependency if missing
+            if (!jsonText.Contains("\"me.conkist.gdk.services\""))
             {
                 int dependenciesIndex = jsonText.IndexOf("\"dependencies\"");
                 int openBracketIndex = jsonText.IndexOf("{", dependenciesIndex);
                 if (openBracketIndex >= 0)
                 {
-                    string newDep = $"\n    \"me.conkist.gdk.core\": \"{CoreGitUrl}\",";
+                    string newDep = $"\n    \"me.conkist.gdk.services\": \"{ServicesGitUrl}\",";
+                    jsonText = jsonText.Insert(openBracketIndex + 1, newDep);
+                    modified = true;
+                }
+            }
+
+            // 3. Add me.conkist.gdk.smart-agents dependency if missing
+            if (!jsonText.Contains("\"me.conkist.gdk.smart-agents\""))
+            {
+                int dependenciesIndex = jsonText.IndexOf("\"dependencies\"");
+                int openBracketIndex = jsonText.IndexOf("{", dependenciesIndex);
+                if (openBracketIndex >= 0)
+                {
+                    string newDep = $"\n    \"me.conkist.gdk.smart-agents\": \"{SmartAgentsGitUrl}\",";
                     jsonText = jsonText.Insert(openBracketIndex + 1, newDep);
                     modified = true;
                 }
