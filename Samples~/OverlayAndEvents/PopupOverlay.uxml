@@ -1,0 +1,13 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="PopupOverlay.uss" />
+    <ui:VisualElement name="OverlayBackground" class="overlay-bg">
+        <ui:VisualElement name="PopupCard" class="popup-card">
+            <ui:Label name="PopupTitle" class="popup-title" text="Title" />
+            <ui:Label name="PopupMessage" class="popup-message" text="Message goes here." />
+            <ui:VisualElement name="ButtonContainer" class="button-container">
+                <ui:Button name="CancelButton" class="popup-btn popup-btn-cancel" text="Cancelar" />
+                <ui:Button name="ConfirmButton" class="popup-btn popup-btn-confirm" text="OK" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

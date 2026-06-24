@@ -43,11 +43,17 @@
       "displayName": "Loading Demo",
       "description": "Demonstrates the LoadingManager and async scene transitions.",
       "path": "Samples~/Loading"
+    },
+    {
+      "displayName": "Overlay and Event Demo",
+      "description": "Demonstrates the OverlayManager and popup/loading overlays triggered by connectivity and UI events.",
+      "path": "Samples~/OverlayAndEvents"
     }
   ],
   "type": "tool",
   "dependencies": {
     "com.cysharp.unitask": "2.5.11",
+    "jp.hadashikick.vcontainer": "1.18.0",
     "com.unity.addressables": "2.9.1"
   }
 }

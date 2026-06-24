@@ -1,0 +1,121 @@
+.overlay-bg {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(10, 10, 18, 0.82);
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    display: none;
+    transition-property: opacity;
+    transition-duration: 0.25s;
+    transition-timing-function: ease-out;
+}
+
+.overlay-bg.overlay-bg--active {
+    opacity: 1;
+}
+
+.popup-card {
+    background-color: rgba(28, 28, 40, 0.96);
+    border-radius: 36px;
+    border-width: 1.5px;
+    border-color: rgba(255, 255, 255, 0.08);
+    padding: 48px;
+    width: 85%;
+    max-width: 650px;
+    align-items: center;
+    justify-content: center;
+    shadow-color: rgba(0, 0, 0, 0.5);
+    shadow-offset: 0 10px;
+    shadow-radius: 20px;
+    shadow-opacity: 1;
+}
+
+.popup-title {
+    color: rgb(255, 255, 255);
+    font-size: 44px;
+    -unity-font-style: bold;
+    margin-bottom: 24px;
+    -unity-text-align: middle-center;
+}
+
+.popup-message {
+    color: rgba(255, 255, 255, 0.78);
+    font-size: 34px;
+    margin-bottom: 44px;
+    -unity-text-align: middle-center;
+    white-space: normal;
+    line-height: 48px;
+}
+
+.button-container {
+    flex-direction: row;
+    justify-content: center;
+    width: 100%;
+}
+
+.popup-btn {
+    padding: 24px 54px;
+    border-radius: 28px;
+    font-size: 34px;
+    -unity-font-style: bold;
+    min-width: 200px;
+    margin: 0 16px;
+    border-width: 0;
+    transition-property: background-color;
+    transition-duration: 0.2s;
+}
+
+.popup-btn-confirm {
+    background-color: rgb(74, 86, 226);
+    color: rgb(255, 255, 255);
+}
+
+.popup-btn-confirm:hover {
+    background-color: rgb(92, 103, 235);
+}
+
+.popup-btn-confirm:active {
+    background-color: rgb(56, 66, 184);
+}
+
+.popup-btn-cancel {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: rgb(255, 255, 255);
+    border-width: 1.5px;
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.popup-btn-cancel:hover {
+    background-color: rgba(255, 255, 255, 0.18);
+}
+
+.popup-btn-cancel:active {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Error Specific State Styling */
+.popup-card.error {
+    border-color: rgba(255, 59, 48, 0.45);
+}
+
+.popup-card.error .popup-title {
+    color: rgb(255, 59, 48);
+}
+
+.popup-card.error .popup-btn-confirm {
+    background-color: rgb(255, 59, 48);
+}
+
+.popup-card.error .popup-btn-confirm:hover {
+    background-color: rgb(255, 85, 75);
+}
+
+.popup-card.error .popup-btn-confirm:active {
+    background-color: rgb(220, 40, 30);
+}
