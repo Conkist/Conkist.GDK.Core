@@ -121,6 +121,10 @@ namespace Conkist.GDK.Editor
                     Debug.Log($"[Conkist GDK] Found {_installQueue.Count} missing dependencies. Starting sequential installation...");
                     ProcessNextInstallation();
                 }
+                else
+                {
+                    UpdateGlobalDefineSymbols(installedPackages);
+                }
             }
         }
 
@@ -129,6 +133,7 @@ namespace Conkist.GDK.Editor
             if (_installQueue == null || _installQueue.Count == 0)
             {
                 Debug.Log("[Conkist GDK] All missing dependencies have been successfully processed.");
+                UpdateGlobalDefineSymbols(null);
                 return;
             }
 
@@ -158,6 +163,75 @@ namespace Conkist.GDK.Editor
 
                 // Process the next package in queue
                 ProcessNextInstallation();
+            }
+        }
+
+        private static void UpdateGlobalDefineSymbols(HashSet<string> installedPackages = null)
+        {
+            if (installedPackages == null)
+            {
+                ListRequest request = Client.List(true);
+                while (!request.IsCompleted) { }
+                if (request.Status == StatusCode.Success)
+                {
+                    installedPackages = new HashSet<string>();
+                    foreach (var package in request.Result)
+                    {
+                        installedPackages.Add(package.name);
+                    }
+                }
+            }
+
+            if (installedPackages == null) return;
+
+            bool hasUniTask = installedPackages.Contains("com.cysharp.unitask");
+            bool hasVContainer = installedPackages.Contains("jp.hadashikick.vcontainer");
+
+            SetSymbolState("CONKIST_UNITASK", hasUniTask);
+            SetSymbolState("CONKIST_VCONTAINER", hasVContainer);
+        }
+
+        private static void SetSymbolState(string symbol, bool active)
+        {
+            BuildTargetGroup buildTargetGroup = EditorUserBuildSettings.selectedBuildTargetGroup;
+            if (buildTargetGroup == BuildTargetGroup.Unknown) return;
+
+#if UNITY_2021_2_OR_NEWER
+            var namedBuildTarget = UnityEditor.Build.NamedBuildTarget.FromBuildTargetGroup(buildTargetGroup);
+            string defines = PlayerSettings.GetScriptingDefineSymbols(namedBuildTarget);
+#else
+            string defines = PlayerSettings.GetScriptingDefineSymbolsForGroup(buildTargetGroup);
+#endif
+
+            List<string> symbols = new List<string>(defines.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries));
+            bool modified = false;
+
+            if (active)
+            {
+                if (!symbols.Contains(symbol))
+                {
+                    symbols.Add(symbol);
+                    modified = true;
+                }
+            }
+            else
+            {
+                if (symbols.Contains(symbol))
+                {
+                    symbols.Remove(symbol);
+                    modified = true;
+                }
+            }
+
+            if (modified)
+            {
+                string newDefines = string.Join(";", symbols);
+#if UNITY_2021_2_OR_NEWER
+                PlayerSettings.SetScriptingDefineSymbols(namedBuildTarget, newDefines);
+#else
+                PlayerSettings.SetScriptingDefineSymbolsForGroup(buildTargetGroup, newDefines);
+#endif
+                Debug.Log($"[Conkist GDK] Scripting define symbol '{symbol}' was {(active ? "enabled" : "disabled")} globally.");
             }
         }
     }
