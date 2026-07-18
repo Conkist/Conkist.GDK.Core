@@ -1,0 +1,18 @@
+{
+    "name": "Conkist.GDK.Android",
+    "rootNamespace": "Conkist.GDK.Android",
+    "references": [
+        "GUID:3ed031bfa9371814e8740aebda3d0878"
+    ],
+    "includePlatforms": [
+        "Android"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

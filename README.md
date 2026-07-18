@@ -2,12 +2,34 @@
 
 O **Conkist GDK Core** é o pacote fundamental do Conkist Game Development Kit (GDK). Ele fornece uma base arquitetural sólida, modular e de altíssima performance para jogos na Unity, focando no desacoplamento de sistemas, gerenciamento eficiente de estados e na testabilidade do código.
 
-Este documento detalha cada um dos padrões de projeto e ferramentas presentes no pacote, seus casos de uso recomendados e exemplos práticos de aplicação.
+Este documento detalha os padrões de projeto, a estrutura reorganizada de pacotes, as assembly definitions e as ferramentas disponíveis.
+
+---
+
+## Estrutura do Pacote e Assembly Definitions
+
+O pacote foi reestruturado para separar rigorosamente os comportamentos básicos (**Core**), utilitários úteis de desenvolvimento (**Utils**), integrações nativas (**Android** e **iOS**) e utilitários e interfaces de editor (**Tools**).
+
+```
+me.conkist.gdk.core/
+├── Runtime/
+│   ├── Core/         -> Estruturas arquiteturais base (Conkist.GDK.asmdef)
+│   ├── Utils/        -> Utilitários comuns e de terceiros (Conkist.GDK.Utils.asmdef)
+│   ├── Android/      -> Código nativo e callbacks Android (Conkist.GDK.Android.asmdef)
+│   └── iOS/          -> Código nativo e callbacks iOS (Conkist.GDK.iOS.asmdef)
+└── Editor/
+    └── Tools/        -> Scripts de editor, menus e drawers (Conkist.GDK.Editor.asmdef)
+```
+
+### Namespaces Padronizados
+* **`Conkist.GDK`**: Contém padrões estruturais globais (Singletons, Eventos, Commands, Factories).
+* **`Conkist.GDK.Utils`**: Contém extensões de código (`MyExtensions`, `MyCollections`, `MyString`), enums, constantes e utilitários de terceiros (como NaughtyAttributes).
+* **`Conkist.GDK.Tools`**: Contém ferramentas exclusivas de editor, preprocessors de presets de assets e janelas.
 
 ---
 
 ## 1. Padrão Singleton
-Localização: `Runtime/`
+Localização: `Runtime/Core/`
 
 O pacote Core separa a inicialização e o ciclo de vida de Singletons em dois utilitários dedicados, de acordo com o contexto necessário.
 
@@ -34,6 +56,8 @@ O pacote Core separa a inicialização e o ciclo de vida de Singletons em dois u
 * **Quando usar:** Para utilitários ou controladores puramente lógicos que não necessitam de representação física na hierarquia da Unity (ex: `GameConfigRegistry`, `EncryptionUtility`).
 * **Exemplo de Uso:**
   ```csharp
+  using Conkist.GDK;
+
   public class CryptoManager : PureSingleton<CryptoManager>
   {
       public string Encrypt(string data) => "...";
@@ -43,7 +67,7 @@ O pacote Core separa a inicialização e o ciclo de vida de Singletons em dois u
 ---
 
 ## 2. Framework de Serialização JSON (Newtonsoft.Json)
-Localização: `Runtime/Serialization/`
+Localização: `Runtime/Core/Serialization/`
 
 Padroniza a forma como modelos de dados e estados de jogo são persistidos e convertidos, configurado nativamente com parâmetros otimizados para Unity (evitando recursões e referências circulares).
 
@@ -66,6 +90,8 @@ Padroniza a forma como modelos de dados e estados de jogo são persistidos e con
 * **Caso de Uso:** Modelos de perfil de jogador (`PlayerProfile`), inventário, progresso de missões, configurações salvas.
 * **Exemplo de Uso:**
   ```csharp
+  using Conkist.GDK.Serialization;
+
   [System.Serializable]
   public class GameSaveData : JsonSerializableBase<GameSaveData>
   {
@@ -81,7 +107,7 @@ Padroniza a forma como modelos de dados e estados de jogo são persistidos e con
 ---
 
 ## 3. Sistema Desacoplado de Eventos (Publish/Subscribe)
-Localização: `Runtime/Events/`
+Localização: `Runtime/Core/Events/`
 
 Um sistema robusto e tipado de comunicação entre classes, eliminando a dependência direta entre sistemas emissores e receptores.
 
@@ -120,7 +146,7 @@ Um sistema robusto e tipado de comunicação entre classes, eliminando a depend�
 ---
 
 ## 4. Padrão Command
-Localização: `Runtime/Commands/`
+Localização: `Runtime/Core/Commands/`
 
 Desacopla a solicitação de uma ação do objeto que realmente a executa, fornecendo total suporte a ações reversíveis (Undo/Redo) e execução assíncrona.
 
@@ -176,7 +202,7 @@ Quando um comando envolve aleatoriedade (ex: rolar um dado ou sortear um efeito)
 ---
 
 ## 5. Padrão Factory (Integrado ao VContainer)
-Localização: `Runtime/Factories/`
+Localização: `Runtime/Core/Factories/`
 
 Centraliza a criação de objetos complexos de forma performática. Integra-se nativamente ao **VContainer** para que novos objetos criados tenham todas as suas dependências resolvidas automaticamente em tempo de execução.
 
@@ -282,7 +308,7 @@ Diferente do `UnityEngine.Random` (que utiliza estado global baseado no tempo de
 
 ### Exemplo de Uso:
 ```csharp
-using Conkist.GDK;
+using Conkist.GDK.Utils;
 using UnityEngine;
 
 public class DeterministicSpawner : MonoBehaviour
@@ -303,6 +329,18 @@ public class DeterministicSpawner : MonoBehaviour
     }
 }
 ```
+
+---
+
+## 7. Plataformas Nativas (Android e iOS)
+Localizações: `Runtime/Android/` e `Runtime/iOS/`
+
+O GDK Core agora encapsula as rotinas de compilação de código nativo (como `.aar` para Android e arquivos `.mm` para iOS) sob assemblies nativas específicas de plataforma. 
+
+* **`Conkist.GDK.Android`**: Compilado apenas quando o alvo da build é Android.
+* **`Conkist.GDK.iOS`**: Compilado apenas quando o alvo da build é iOS.
+
+Isso previne que código e callbacks nativos poluam outros assemblies durante testes de editor ou compilações para desktop, mantendo o fluxo estável.
 
 ---
 

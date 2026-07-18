@@ -1,0 +1,15 @@
+{
+    "name": "Conkist.GDK.Utils.Attributes.Test",
+    "references": [
+        "GUID:776d03a35f1b52c4a9aed9f56d7b4229",
+        "GUID:0813c441beb0c4dd0b515f31b2ca8e34"
+    ],
+    "optionalUnityReferences": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": []
+}

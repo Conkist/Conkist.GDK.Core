@@ -1,7 +1,11 @@
 {
-    "name": "Conkist.Tools.Editor",
+    "name": "Conkist.GDK.Editor",
     "rootNamespace": "Conkist.GDK.Editor",
-    "references": [],
+    "references": [
+        "GUID:3ed031bfa9371814e8740aebda3d0878",
+        "GUID:0813c441beb0c4dd0b515f31b2ca8e34",
+        "GUID:776d03a35f1b52c4a9aed9f56d7b4229"
+    ],
     "includePlatforms": [
         "Editor"
     ],

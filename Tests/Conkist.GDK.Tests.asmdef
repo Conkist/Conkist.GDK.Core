@@ -9,6 +9,7 @@
         "UnityEditor.TestRunner",
         "UniTask",
         "Conkist.GDK",
+        "Conkist.GDK.Utils",
         "VContainer"
     ],
     "includePlatforms": [],
