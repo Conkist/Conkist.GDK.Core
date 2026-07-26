@@ -1,6 +1,18 @@
 namespace Conkist.GDK
 {
     /// <summary>
+    /// Core GDK Constants.
+    /// </summary>
+    public static class Const
+    {
+        public static class OverlayName
+        {
+            public const string LoadingScreen = "LoadingScreen";
+            public const string PopupOverlay = "PopupOverlay";
+        }
+    }
+
+    /// <summary>
     /// Enum representing different types of loads.
     /// </summary>
     public enum LoadType

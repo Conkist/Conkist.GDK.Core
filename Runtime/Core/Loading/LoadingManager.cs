@@ -382,6 +382,11 @@ namespace Conkist.GDK
             Instance._loadingStates = states;
             Debug.Log("[LoadingEvent] ChangeState " + states);
             LoadingEvents.LoadingStateChangeEvent.Trigger(_loadAddress, states);
+
+            if (states == LoadingStates.ExitFade || states == LoadingStates.LoadTransitionComplete)
+            {
+                Overlay.Hide(Const.OverlayName.LoadingScreen);
+            }
         }
 
         internal static void StartupLoading(string address, LoadType loadType, string loadingCanvasKey = null, bool ignoreEventsOnHidden = true)
@@ -394,6 +399,11 @@ namespace Conkist.GDK
             ChangeLoadingState(LoadingStates.LoadStarted);
             EventManager.TriggerEvent(new LoadingEvents.LoadingCanvasSetEvent(loadingCanvasKey));
             EventManager.TriggerEvent(new LoadingEvents.LoadingStartEvent(address, loadType));
+
+            if (loadType == LoadType.FullScreen || loadType == LoadType.Quick)
+            {
+                Overlay.Show(Const.OverlayName.LoadingScreen);
+            }
         }
 
         #region EXTENSIONS
