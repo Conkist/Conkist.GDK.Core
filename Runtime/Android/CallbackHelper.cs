@@ -1,13 +1,9 @@
 using System.Collections;
 using UnityEngine;
-using Conkist.GDK.Utils;
-
-namespace Conkist.Tools
+namespace Conkist.GDK.Utils
 {
     #if UNITY_EDITOR || UNITY_ANDROID
 
-    namespace ShareNamespace
-    {
     	public class CallbackHelper : MonoBehaviour
     	{
     		public Share.ShareResultCallback callback;
@@ -78,6 +74,5 @@ namespace Conkist.Tools
     			resultReceived = true;
     		}
     	}
-    }
     #endif
 }

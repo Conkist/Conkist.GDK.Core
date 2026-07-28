@@ -1,12 +1,9 @@
 using UnityEngine;
-using Conkist.GDK.Utils;
 
-namespace Conkist.Tools
+namespace Conkist.GDK.Utils
 {
     ﻿#if UNITY_EDITOR || UNITY_IOS
 
-    namespace ShareNamespace
-    {
     	public class ShareResultCallbackiOS : MonoBehaviour
     	{
     		private static ShareResultCallbackiOS instance;
@@ -44,6 +41,5 @@ namespace Conkist.Tools
     			}
     		}
     	}
-    }
     #endif
 }

@@ -1,12 +1,9 @@
 using UnityEngine;
-using Conkist.GDK.Utils;
 
-namespace Conkist.Tools
+namespace Conkist.GDK.Utils
 {
     ﻿#if UNITY_EDITOR || UNITY_ANDROID
 
-    namespace ShareNamespace
-    {
     	public class ShareResultCallbackAndroid : AndroidJavaProxy
     	{
     		private readonly CallbackHelper callbackHelper;
@@ -33,6 +30,5 @@ namespace Conkist.Tools
     			return callbackHelper && callbackHelper.callback != null;
     		}
     	}
-    }
     #endif
 }
