@@ -3,11 +3,21 @@ using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement.ResourceProviders;
 using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
 
 namespace Conkist.GDK
 {
+    /// <summary>
+    /// Determines how OverlayManager resolves an overlay's additive scene.
+    /// </summary>
+    public enum OverlaySourceType
+    {
+        Addressable,
+        BuildScene
+    }
+
     /// <summary>
     /// Persistent Overlay and Popup Manager.
     /// Manages additive scene overlays, moving their root GameObjects into DontDestroyOnLoad upon first load.
@@ -31,6 +41,11 @@ namespace Conkist.GDK
         [Header("Legacy Popup Settings")]
         [Tooltip("The default visual tree template for the legacy popup layout.")]
         [SerializeField] private VisualTreeAsset defaultPopupTemplate;
+
+        [Header("Overlay Loading")]
+        [Tooltip("How overlay scenes are resolved when Show/ShowAsync is called without an explicit sourceType override.")]
+        [SerializeField] private OverlaySourceType defaultSourceType = OverlaySourceType.Addressable;
+        public OverlaySourceType DefaultSourceType => defaultSourceType;
 
         private readonly Dictionary<string, OverlayEntry> _overlayCache = new Dictionary<string, OverlayEntry>();
 
@@ -90,7 +105,8 @@ namespace Conkist.GDK
         /// Loads scene on first request, puts root GameObjects into DontDestroyOnLoad, and activates them.
         /// Reuses cached scene objects on subsequent calls.
         /// </summary>
-        public async UniTask ShowOverlayAsync(string overlayName, ShowPopupEvent popupData = default)
+        /// <param name="sourceType">Overrides <see cref="DefaultSourceType"/> for this call only.</param>
+        public async UniTask ShowOverlayAsync(string overlayName, ShowPopupEvent popupData = default, OverlaySourceType? sourceType = null)
         {
             if (string.IsNullOrEmpty(overlayName))
             {
@@ -113,7 +129,7 @@ namespace Conkist.GDK
             var newEntry = new OverlayEntry { Name = overlayName };
             _overlayCache[overlayName] = newEntry;
 
-            bool loadedSuccessfully = await LoadAdditiveSceneAsync(overlayName, newEntry);
+            bool loadedSuccessfully = await LoadAdditiveSceneAsync(overlayName, newEntry, sourceType ?? defaultSourceType);
             if (loadedSuccessfully)
             {
                 newEntry.IsLoaded = true;
@@ -137,9 +153,10 @@ namespace Conkist.GDK
         /// <summary>
         /// Shows an overlay (triggers background load if not already cached), passing ShowPopupEvent parameters.
         /// </summary>
-        public void ShowOverlay(string overlayName, ShowPopupEvent popupData = default)
+        /// <param name="sourceType">Overrides <see cref="DefaultSourceType"/> for this call only.</param>
+        public void ShowOverlay(string overlayName, ShowPopupEvent popupData = default, OverlaySourceType? sourceType = null)
         {
-            ShowOverlayAsync(overlayName, popupData).Forget();
+            ShowOverlayAsync(overlayName, popupData, sourceType).Forget();
         }
 
         /// <summary>
@@ -193,44 +210,90 @@ namespace Conkist.GDK
                    entry.IsVisible;
         }
 
-        private async UniTask<bool> LoadAdditiveSceneAsync(string sceneName, OverlayEntry entry)
+        private async UniTask<bool> LoadAdditiveSceneAsync(string sceneName, OverlayEntry entry, OverlaySourceType sourceType)
         {
-            // 1. Try Addressables scene loading
-            try
+            switch (sourceType)
             {
-                var handle = Addressables.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
-                var sceneInstance = await handle;
-                if (sceneInstance.Scene.IsValid() && sceneInstance.Scene.isLoaded)
+                case OverlaySourceType.Addressable:
                 {
-                    ProcessLoadedScene(sceneInstance.Scene, entry);
+                    if (!IsAddressableKeyValid(sceneName))
+                    {
+                        Debug.LogWarning($"[OverlayManager] No Addressable entry found for overlay '{sceneName}' (source type: Addressable). Skipping overlay — no transition will be shown.");
+                        return false;
+                    }
+
+                    try
+                    {
+                        var handle = Addressables.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
+                        var sceneInstance = await handle;
+                        if (sceneInstance.Scene.IsValid() && sceneInstance.Scene.isLoaded)
+                        {
+                            ProcessLoadedScene(sceneInstance.Scene, entry);
+                            return true;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.LogWarning($"[OverlayManager] Addressables scene load for '{sceneName}' failed: {ex.Message}");
+                    }
+
+                    return false;
+                }
+
+                case OverlaySourceType.BuildScene:
+                {
+                    if (!Application.CanStreamedLevelBeLoaded(sceneName))
+                    {
+                        Debug.LogWarning($"[OverlayManager] No build/shared scene list entry found for overlay '{sceneName}' (source type: BuildScene). Skipping overlay — no transition will be shown.");
+                        return false;
+                    }
+
+                    try
+                    {
+                        var asyncOp = UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
+                        if (asyncOp == null) return false;
+
+                        await asyncOp;
+                        var loadedScene = UnityEngine.SceneManagement.SceneManager.GetSceneByName(sceneName);
+                        if (loadedScene.IsValid() && loadedScene.isLoaded)
+                        {
+                            ProcessLoadedScene(loadedScene, entry);
+                            return true;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.LogError($"[OverlayManager] Standard SceneManager load for '{sceneName}' failed: {ex.Message}");
+                    }
+
+                    return false;
+                }
+
+                default:
+                    return false;
+            }
+        }
+
+        /// <summary>
+        /// Synchronously checks whether an Addressable key resolves to a location, without triggering
+        /// Addressables' own InvalidKeyException/error logging for keys that were never registered.
+        /// If catalogs aren't loaded yet, this is permissive (returns true) so a valid key isn't skipped on a cold start.
+        /// </summary>
+        private static bool IsAddressableKeyValid(string key)
+        {
+            if (string.IsNullOrEmpty(key)) return false;
+
+            bool anyLocatorLoaded = false;
+            foreach (var locator in Addressables.ResourceLocators)
+            {
+                anyLocatorLoaded = true;
+                if (locator.Locate(key, typeof(SceneInstance), out _))
+                {
                     return true;
                 }
             }
-            catch (Exception ex)
-            {
-                Debug.Log($"[OverlayManager] Addressables scene load for '{sceneName}' failed or not key-mapped ({ex.Message}). Falling back to UnityEngine.SceneManager...");
-            }
 
-            // 2. Fallback to standard UnityEngine.SceneManagement.SceneManager
-            try
-            {
-                var asyncOp = UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
-                if (asyncOp == null) return false;
-
-                await asyncOp;
-                var loadedScene = UnityEngine.SceneManagement.SceneManager.GetSceneByName(sceneName);
-                if (loadedScene.IsValid() && loadedScene.isLoaded)
-                {
-                    ProcessLoadedScene(loadedScene, entry);
-                    return true;
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError($"[OverlayManager] Standard SceneManager load for '{sceneName}' failed: {ex.Message}");
-            }
-
-            return false;
+            return !anyLocatorLoaded;
         }
 
         private void ProcessLoadedScene(Scene scene, OverlayEntry entry)
