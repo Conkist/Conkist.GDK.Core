@@ -33,6 +33,7 @@ namespace Conkist.GDK
 
         private readonly List<AudioSource> _sfxPool = new List<AudioSource>();
         private readonly List<string> _loadedAddressableKeys = new List<string>();
+        private readonly Dictionary<string, bool> _exposedParameterCache = new Dictionary<string, bool>();
 
         public UnityEngine.Audio.AudioMixer AudioMixer => audioMixer;
         public UnityEngine.Audio.AudioMixerGroup MasterGroup => masterGroup;
@@ -302,8 +303,28 @@ namespace Conkist.GDK
         public bool IsMixerParameterExposed(UnityEngine.Audio.AudioMixerGroup group)
         {
             if (audioMixer == null || group == null) return false;
-            float temp;
-            return audioMixer.GetFloat(group.name, out temp) || audioMixer.GetFloat(group.name + "Volume", out temp);
+            return IsParameterExposed(group.name, out _) || IsParameterExposed(group.name + "Volume", out _);
+        }
+
+        /// <summary>
+        /// Checks (and caches) whether an exposed parameter exists on the AudioMixer, returning its current value if so.
+        /// AudioMixer.GetFloat logs a console warning on a miss with no silent alternative, so each parameter name
+        /// is only ever probed once per session instead of on every volume read/write.
+        /// </summary>
+        private bool IsParameterExposed(string parameterName, out float currentValue)
+        {
+            currentValue = 0f;
+            if (audioMixer == null || string.IsNullOrEmpty(parameterName)) return false;
+
+            if (_exposedParameterCache.TryGetValue(parameterName, out bool cachedExposed))
+            {
+                if (cachedExposed) audioMixer.GetFloat(parameterName, out currentValue);
+                return cachedExposed;
+            }
+
+            bool exposed = audioMixer.GetFloat(parameterName, out currentValue);
+            _exposedParameterCache[parameterName] = exposed;
+            return exposed;
         }
 
         private AudioSource _defaultMusicSource;
@@ -444,8 +465,7 @@ namespace Conkist.GDK
             float saved = PlayerPrefs.GetFloat(prefsKey, 0.8f);
             if (audioMixer != null && group != null)
             {
-                float db;
-                if (audioMixer.GetFloat(group.name, out db) || audioMixer.GetFloat(group.name + "Volume", out db))
+                if (IsParameterExposed(group.name, out float db) || IsParameterExposed(group.name + "Volume", out db))
                 {
                     return DecibelsToLinear(db);
                 }
@@ -462,14 +482,12 @@ namespace Conkist.GDK
             if (audioMixer != null && group != null)
             {
                 float db = LinearToDecibels(value);
-                
-                // Safely check parameter existence with GetFloat (which doesn't print warnings) before calling SetFloat
-                float temp;
-                if (audioMixer.GetFloat(group.name, out temp))
+
+                if (IsParameterExposed(group.name, out _))
                 {
                     audioMixer.SetFloat(group.name, db);
                 }
-                if (audioMixer.GetFloat(group.name + "Volume", out temp))
+                if (IsParameterExposed(group.name + "Volume", out _))
                 {
                     audioMixer.SetFloat(group.name + "Volume", db);
                 }
