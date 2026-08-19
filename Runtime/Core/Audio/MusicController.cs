@@ -120,6 +120,12 @@ namespace Conkist.GDK
         /// </summary>
         public void Play()
         {
+            if (audioClipReferences == null || audioClipReferences.Length == 0)
+            {
+                Stop();
+                return;
+            }
+
             AudioSource source = GetActiveSource();
             if (source == null) return;
 
