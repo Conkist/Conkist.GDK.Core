@@ -29,6 +29,7 @@ namespace Conkist.GDK
         private bool _isPaused = false;
         private AudioSource _localFallbackSource;
         private readonly Dictionary<int, AudioClip> _loadedClips = new Dictionary<int, AudioClip>();
+        private readonly HashSet<AudioClip> _addressablesLoadedClips = new HashSet<AudioClip>();
         private bool _isLoading = false;
 
         public int CurrentIndex => _currentIndex;
@@ -228,6 +229,7 @@ namespace Conkist.GDK
                 {
                     clip = await Addressables.LoadAssetAsync<AudioClip>(assetRef).ToUniTask();
                     _loadedClips[index] = clip;
+                    if (clip != null) _addressablesLoadedClips.Add(clip);
                 }
                 catch (System.Exception ex)
                 {
@@ -318,7 +320,7 @@ namespace Conkist.GDK
 
         private void OnDestroy()
         {
-            foreach (var clip in _loadedClips.Values)
+            foreach (var clip in _addressablesLoadedClips)
             {
                 if (clip != null)
                 {
@@ -326,6 +328,7 @@ namespace Conkist.GDK
                 }
             }
             _loadedClips.Clear();
+            _addressablesLoadedClips.Clear();
         }
     }
 }
