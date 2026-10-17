@@ -1,353 +1,237 @@
-# Conkist GDK Core
+# Conkist.GDK.Core
 
-O **Conkist GDK Core** é o pacote fundamental do Conkist Game Development Kit (GDK). Ele fornece uma base arquitetural sólida, modular e de altíssima performance para jogos na Unity, focando no desacoplamento de sistemas, gerenciamento eficiente de estados e na testabilidade do código.
+<p>
+  <img src="https://img.shields.io/badge/Unity-6000.3.14f1-black?logo=unity" />
+  <img src="https://img.shields.io/badge/C%23-dev-239120?logo=csharp" />
+  <img src="https://img.shields.io/badge/version-1.0.0-blue" />
+  <img src="https://img.shields.io/badge/license-MIT-green" />
+</p>
 
-Este documento detalha os padrões de projeto, a estrutura reorganizada de pacotes, as assembly definitions e as ferramentas disponíveis.
+Foundation layer of the **Conkist Game Development Kit** — a modular Unity architecture framework focused on decoupled systems, testable code and deterministic behavior.
+
+```json
+"me.conkist.gdk.core": "https://github.com/Conkist/Conkist.GDK.Core.git"
+```
 
 ---
 
-## Estrutura do Pacote e Assembly Definitions
-
-O pacote foi reestruturado para separar rigorosamente os comportamentos básicos (**Core**), utilitários úteis de desenvolvimento (**Utils**), integrações nativas (**Android** e **iOS**) e utilitários e interfaces de editor (**Tools**).
+## Package Structure
 
 ```
 me.conkist.gdk.core/
 ├── Runtime/
-│   ├── Core/         -> Estruturas arquiteturais base (Conkist.GDK.asmdef)
-│   ├── Utils/        -> Utilitários comuns e de terceiros (Conkist.GDK.Utils.asmdef)
-│   ├── Android/      -> Código nativo e callbacks Android (Conkist.GDK.Android.asmdef)
-│   └── iOS/          -> Código nativo e callbacks iOS (Conkist.GDK.iOS.asmdef)
+│   ├── Core/         → Architectural patterns (Conkist.GDK)
+│   ├── Utils/        → Extensions and utilities (Conkist.GDK.Utils)
+│   ├── Android/      → Native Android callbacks (platform-gated)
+│   └── iOS/          → Native iOS callbacks (platform-gated)
 └── Editor/
-    └── Tools/        -> Scripts de editor, menus e drawers (Conkist.GDK.Editor.asmdef)
+    └── Tools/        → Editor scripts, menus, attribute drawers (Conkist.GDK.Tools)
 ```
 
-### Namespaces Padronizados
-* **`Conkist.GDK`**: Contém padrões estruturais globais (Singletons, Eventos, Commands, Factories).
-* **`Conkist.GDK.Utils`**: Contém extensões de código (`MyExtensions`, `MyCollections`, `MyString`), enums, constantes e utilitários de terceiros (como NaughtyAttributes).
-* **`Conkist.GDK.Tools`**: Contém ferramentas exclusivas de editor, preprocessors de presets de assets e janelas.
+**Namespaces:**
+- `Conkist.GDK` — structural patterns: singletons, events, commands, factories
+- `Conkist.GDK.Utils` — extensions (`MyExtensions`, `MyCollections`, `MyString`), enums, constants
+- `Conkist.GDK.Tools` — editor-only tooling, asset preset preprocessors
+
+**Dependencies:** VContainer · UniTask · Addressables · Newtonsoft.Json
 
 ---
 
-## 1. Padrão Singleton
-Localização: `Runtime/Core/`
+## Features
 
-O pacote Core separa a inicialização e o ciclo de vida de Singletons em dois utilitários dedicados, de acordo com o contexto necessário.
+### 1. Singleton
 
-### A. `SingletonBehaviour<T>`
-* **O que é:** Uma classe base genérica para componentes Unity (`MonoBehaviour`) que assegura que apenas uma instância exista na cena e permite persistência entre carregamentos de telas.
-* **Quando usar:** Ideal para gerenciadores que dependem do ciclo de vida da Unity ou de componentes físicos nas cenas (ex: `SoundManager`, `InputManager`, `SceneLoader`).
-* **Exemplo de Uso:**
-  ```csharp
-  using Conkist.GDK;
-  using UnityEngine;
+Two variants for different lifecycle needs.
 
-  public class GameManager : SingletonBehaviour<GameManager>
-  {
-      protected override void Awake()
-      {
-          base.Awake();
-          // Inicialização segura
-      }
-  }
-  ```
-
-### B. `PureSingleton<T>`
-* **O que é:** Uma classe base genérica em C# puro que utiliza inicialização tardia (`System.Lazy<T>`) segura para threads.
-* **Quando usar:** Para utilitários ou controladores puramente lógicos que não necessitam de representação física na hierarquia da Unity (ex: `GameConfigRegistry`, `EncryptionUtility`).
-* **Exemplo de Uso:**
-  ```csharp
-  using Conkist.GDK;
-
-  public class CryptoManager : PureSingleton<CryptoManager>
-  {
-      public string Encrypt(string data) => "...";
-  }
-  ```
-
----
-
-## 2. Framework de Serialização JSON (Newtonsoft.Json)
-Localização: `Runtime/Core/Serialization/`
-
-Padroniza a forma como modelos de dados e estados de jogo são persistidos e convertidos, configurado nativamente com parâmetros otimizados para Unity (evitando recursões e referências circulares).
-
-### A. Métodos de Extensão `JsonExtensions`
-* **Quando usar:** Para converter estruturas rapidamente de/para JSON em qualquer script.
-* **Caso de Uso:** Salvar configurações de preferências locais do jogador (`PlayerPrefs`) ou gerar payloads para comunicação HTTP com servidores backend.
-* **Exemplo de Uso:**
-  ```csharp
-  using Conkist.GDK.Serialization;
-
-  // Serialização simples
-  string json = myObject.ToJson(pretty: true);
-
-  // Deserialização de string para tipo concreto
-  MyConfigData config = json.FromJson<MyConfigData>();
-  ```
-
-### B. `JsonSerializableBase<T>`
-* **Quando usar:** Classe base ideal para criar modelos de dados e classes de progresso que necessitam de autogestão de carregamento e salvamento.
-* **Caso de Uso:** Modelos de perfil de jogador (`PlayerProfile`), inventário, progresso de missões, configurações salvas.
-* **Exemplo de Uso:**
-  ```csharp
-  using Conkist.GDK.Serialization;
-
-  [System.Serializable]
-  public class GameSaveData : JsonSerializableBase<GameSaveData>
-  {
-      public string PlayerName;
-      public int HighScore;
-  }
-
-  // Uso:
-  string dataJson = saveState.ToJson();
-  GameSaveData loadedState = GameSaveData.FromJson(dataJson);
-  ```
-
----
-
-## 3. Sistema Desacoplado de Eventos (Publish/Subscribe)
-Localização: `Runtime/Core/Events/`
-
-Um sistema robusto e tipado de comunicação entre classes, eliminando a dependência direta entre sistemas emissores e receptores.
-
-* **Componentes:**
-  * `EventManager`: Barramento central estático para adição de ouvintes e despacho de eventos.
-  * `GameEvent`: Struct de evento genérica para envio de mensagens com identificadores de string.
-  * `EventListener<T>`: Interface que as classes devem assinar para processar eventos específicos.
-* **Quando usar:** Comunicação entre sistemas de mecânica (Gameplay) e UI (Interface do Usuário). Por exemplo, quando o jogador recebe dano, a mecânica apenas dispara `PlayerDamagedEvent`, e a UI de barra de vida ou a tela vermelha capturam esse evento de forma independente.
-* **Exemplo de Uso:**
-  ```csharp
-  using Conkist.GDK;
-
-  // 1. Definição do Evento
-  public struct HealthChangedEvent
-  {
-      public int CurrentHealth;
-      public HealthChangedEvent(int health) => CurrentHealth = health;
-  }
-
-  // 2. Ouvinte (Listener)
-  public class HealthBarUI : MonoBehaviour, EventListener<HealthChangedEvent>
-  {
-      private void OnEnable() => this.Subscribe<HealthChangedEvent>();
-      private void OnDisable() => this.Unsubscribe<HealthChangedEvent>();
-
-      public void OnEventCallback(HealthChangedEvent eventData)
-      {
-          UpdateUI(eventData.CurrentHealth);
-      }
-  }
-
-  // 3. Emissor (Publisher)
-  EventManager.TriggerEvent(new HealthChangedEvent(80));
-  ```
-
----
-
-## 4. Padrão Command
-Localização: `Runtime/Core/Commands/`
-
-Desacopla a solicitação de uma ação do objeto que realmente a executa, fornecendo total suporte a ações reversíveis (Undo/Redo) e execução assíncrona.
-
-> [!NOTE]
-> No padrão Command, a ação de **Redo** (refazer) é conceitualmente idêntica a reexecutar o comando. Por isso, não é necessária uma interface `IRedoCommand` separada; o `CommandExecutor` simplesmente chama o método `Execute()` (ou `ExecuteAsync()`) do próprio comando novamente quando um Redo é solicitado.
-
-### Determinismo e Aleatoriedade no Undo/Redo
-Quando um comando envolve aleatoriedade (ex: rolar um dado ou sortear um efeito), chamar `Execute()` novamente no **Redo** gerará um resultado diferente, quebrando o determinismo do jogo. Para resolver isso no GDK, duas abordagens são recomendadas:
-1. **Salvamento de Estado (Abordagem 1):** O comando sorteia o valor apenas na primeira execução e salva esse resultado em uma variável interna. Nas execuções subsequentes (Redo), ele apenas aplica o valor salvo em vez de sortear novamente.
-2. **Snapshot de Semente com PseudoRandom (Abordagem 2):** O comando armazena o estado do gerador pseudoaleatório `PseudoRandom` do exato momento anterior à sua execução. Ao realizar o `Undo()`, ele restaura o estado do gerador, garantindo que o fluxo aleatório seja perfeitamente idêntico no re-carregamento.
-
-* **Componentes:**
-  * `ICommand` / `IAsyncCommand`: Interfaces para comandos simples.
-  * `IUndoableCommand` / `IUndoableAsyncCommand`: Interfaces para comandos reversíveis (contendo o método `Undo()` / `UndoAsync()`).
-  * `CommandExecutor`: Histórico e orquestrador de execução de comandos com suporte a pilhas de Undo/Redo.
-* **Quando usar:** Sistemas de movimentação em jogos de tabuleiro/estratégia, comandos de input de jogadores, transações de inventário (ex: comprar item com opção de reembolso), e sistemas de edição de fases em tempo de execução.
-* **Exemplo de Uso:**
-  ```csharp
-  using Conkist.GDK.Commands;
-
-  public class MoveUnitCommand : IUndoableCommand
-  {
-      private Unit _unit;
-      private Vector3 _previousPos;
-      private Vector3 _newPos;
-
-      public MoveUnitCommand(Unit unit, Vector3 target)
-      {
-          _unit = unit;
-          _newPos = target;
-      }
-
-      public void Execute()
-      {
-          _previousPos = _unit.transform.position;
-          _unit.transform.position = _newPos;
-      }
-
-      public void Undo()
-      {
-          _unit.transform.position = _previousPos;
-      }
-  }
-
-  // Uso através do orquestrador
-  CommandExecutor executor = new CommandExecutor();
-  executor.Execute(new MoveUnitCommand(myUnit, new Vector3(1, 0, 1)));
-
-  // Desfazer o movimento
-  executor.Undo();
-  ```
-
----
-
-## 5. Padrão Factory (Integrado ao VContainer)
-Localização: `Runtime/Core/Factories/`
-
-Centraliza a criação de objetos complexos de forma performática. Integra-se nativamente ao **VContainer** para que novos objetos criados tenham todas as suas dependências resolvidas automaticamente em tempo de execução.
-
-* **Componentes:**
-  * `IFactory<T>` / `IFactory<TParam, T>`: Interfaces síncronas padrões de criação.
-  * `IAsyncFactory<T>` / `IAsyncFactory<TParam, T>`: Interfaces assíncronas (baseadas em `UniTask`) para carregamento e instanciação dinâmica.
-  * `VContainerFactory<T>`: Cria instâncias puras C# resolvendo dependências via construtor.
-  * `PrefabFactory<T>`: Instancia Prefabs locais na cena e resolve dependências via injeção (`[Inject]`) em MonoBehaviours clonados.
-  * `AddressablePrefabFactory<T>`: Carrega o prefab de forma assíncrona através do `LoadingManager` (aproveitando o sistema de contagem de referências, cache e limpeza do GDK) e o instancia resolvendo dependências via VContainer.
-* **Quando usar:** Invocação dinâmica de inimigos durante a partida (Spawn), criação dinâmica de widgets e janelas de UI, instanciação dinâmica de controladores lógicos em C#, e carregamento sob demanda de ativos pesados através do Addressables.
-
-### Exemplo A: Injeção de Prefabs Locais (Síncrono)
+**`SingletonBehaviour<T>`** — MonoBehaviour-based, scene-persistent:
 ```csharp
-using VContainer;
-using VContainer.Unity;
-using Conkist.GDK.Factories;
-using UnityEngine;
+using Conkist.GDK;
 
-// 1. Registro no LifetimeScope da cena
-public class GameLifetimeScope : LifetimeScope
+public class GameManager : SingletonBehaviour<GameManager>
 {
-    [SerializeField] private Enemy enemyPrefab;
-
-    protected override void Configure(IContainerBuilder builder)
+    protected override void Awake()
     {
-        builder.Register<IFactory<Enemy>>(container => 
-            new PrefabFactory<Enemy>(container, enemyPrefab), 
-            Lifetime.Singleton);
-    }
-}
-
-// 2. Uso injetado no Spawner
-public class EnemySpawner
-{
-    private readonly IFactory<Enemy> _enemyFactory;
-
-    public EnemySpawner(IFactory<Enemy> enemyFactory)
-    {
-        _enemyFactory = enemyFactory;
-    }
-
-    public void SpawnEnemy()
-    {
-        // Cria o clone na cena e injeta automaticamente todos os serviços necessários no Enemy!
-        Enemy newEnemy = _enemyFactory.Create();
+        base.Awake();
+        // safe initialization
     }
 }
 ```
 
-### Exemplo B: Integração com `LoadingManager` (Assíncrono via Addressables)
-Ideal para carregar prefabs da memória sob demanda (como inimigos raros ou janelas de UI complexas) sem mantê-los carregados na cena o tempo todo.
+**`PureSingleton<T>`** — pure C#, lazy/thread-safe, no scene dependency:
+```csharp
+using Conkist.GDK;
+
+public class CryptoManager : PureSingleton<CryptoManager>
+{
+    public string Encrypt(string data) => "...";
+}
+```
+
+---
+
+### 2. JSON Serialization
+
+Built on Newtonsoft.Json, tuned for Unity (circular ref safe, `PlayerPrefs`-ready).
+
+**`JsonExtensions`** — quick conversion anywhere:
+```csharp
+using Conkist.GDK.Serialization;
+
+string json = myObject.ToJson(pretty: true);
+MyConfigData config = json.FromJson<MyConfigData>();
+```
+
+**`JsonSerializableBase<T>`** — self-managing save data:
+```csharp
+[System.Serializable]
+public class GameSaveData : JsonSerializableBase<GameSaveData>
+{
+    public string PlayerName;
+    public int HighScore;
+}
+
+string dataJson = saveState.ToJson();
+GameSaveData loaded = GameSaveData.FromJson(dataJson);
+```
+
+---
+
+### 3. Event System (Pub/Sub)
+
+Decoupled typed communication. Gameplay logic fires events; UI and other systems subscribe independently — no direct references.
 
 ```csharp
-using VContainer;
-using VContainer.Unity;
-using Cysharp.Threading.Tasks;
-using Conkist.GDK.Factories;
+using Conkist.GDK;
 
-// 1. Registro do Factory assíncrono no LifetimeScope
-public class MenuLifetimeScope : LifetimeScope
+// 1. Define the event
+public struct HealthChangedEvent
 {
-    protected override void Configure(IContainerBuilder builder)
-    {
-        // Registra a fábrica assíncrona passando o endereço do Addressable
-        builder.Register<IAsyncFactory<ShopPanel>>(container => 
-            new AddressablePrefabFactory<ShopPanel>(container, "Prefabs/UI/ShopPanel"), 
-            Lifetime.Singleton);
-    }
+    public int CurrentHealth;
+    public HealthChangedEvent(int health) => CurrentHealth = health;
 }
 
-// 2. Uso injetado no controlador de UI
-public class MenuController
+// 2. Listener
+public class HealthBarUI : MonoBehaviour, EventListener<HealthChangedEvent>
 {
-    private readonly IAsyncFactory<ShopPanel> _shopFactory;
+    private void OnEnable() => this.Subscribe<HealthChangedEvent>();
+    private void OnDisable() => this.Unsubscribe<HealthChangedEvent>();
 
-    public MenuController(IAsyncFactory<ShopPanel> shopFactory)
-    {
-        _shopFactory = shopFactory;
-    }
-
-    public async UniTask OpenShopAsync()
-    {
-        // 1. Carrega dinamicamente via LoadingManager (gerenciando cache e memórias do GDK)
-        // 2. Instancia o prefab
-        // 3. Injeta dependências automáticas via VContainer
-        ShopPanel shop = await _shopFactory.CreateAsync();
-    }
+    public void OnEventCallback(HealthChangedEvent e) => UpdateUI(e.CurrentHealth);
 }
+
+// 3. Publisher
+EventManager.TriggerEvent(new HealthChangedEvent(80));
 ```
 
 ---
 
-## 6. Pseudo-Random Determinístico
-Localização: `Runtime/Utils/`
+### 4. Command Pattern
 
-Um gerador de números pseudoaleatórios (PRNG) 100% determinístico baseado no algoritmo **Xorshift32**. 
+Full Undo/Redo support with async execution. `CommandExecutor` manages command stacks; Redo re-calls `Execute()` — no separate `IRedoCommand` needed.
 
-### Por que usar?
-Diferente do `UnityEngine.Random` (que utiliza estado global baseado no tempo de sistema), o `PseudoRandom` mantém seu estado isolado em uma semente. Isso permite:
-* Criar replays de partidas com comportamento idêntico.
-* Geração procedural consistente de mapas e fases a partir de uma única semente.
-* Flawless Undo/Redo sincronizando o estado do gerador aleatório em comandos de tabuleiro ou estratégia.
+> **Determinism with randomness:** snapshot `PseudoRandom` state before `Execute()`, restore it on `Undo()` for consistent replay.
 
-### Exemplo de Uso:
+```csharp
+using Conkist.GDK.Commands;
+
+public class MoveUnitCommand : IUndoableCommand
+{
+    private Unit _unit;
+    private Vector3 _previousPos, _newPos;
+
+    public MoveUnitCommand(Unit unit, Vector3 target)
+    {
+        _unit = unit; _newPos = target;
+    }
+
+    public void Execute()
+    {
+        _previousPos = _unit.transform.position;
+        _unit.transform.position = _newPos;
+    }
+
+    public void Undo() => _unit.transform.position = _previousPos;
+}
+
+var executor = new CommandExecutor();
+executor.Execute(new MoveUnitCommand(myUnit, new Vector3(1, 0, 1)));
+executor.Undo();
+```
+
+---
+
+### 5. Factory (VContainer-integrated)
+
+Centralized object creation with automatic dependency injection at runtime.
+
+| Type | Use case |
+|---|---|
+| `IFactory<T>` / `IAsyncFactory<T>` | Sync/async creation contracts |
+| `VContainerFactory<T>` | Pure C# objects via constructor injection |
+| `PrefabFactory<T>` | Local prefab instantiation with `[Inject]` resolution |
+| `AddressablePrefabFactory<T>` | Async Addressables loading + VContainer injection |
+
+**Local prefab (sync):**
+```csharp
+// Registration
+builder.Register<IFactory<Enemy>>(
+    c => new PrefabFactory<Enemy>(c, enemyPrefab), Lifetime.Singleton);
+
+// Usage
+Enemy enemy = _enemyFactory.Create(); // fully injected
+```
+
+**Addressables (async):**
+```csharp
+// Registration
+builder.Register<IAsyncFactory<ShopPanel>>(
+    c => new AddressablePrefabFactory<ShopPanel>(c, "Prefabs/UI/ShopPanel"), Lifetime.Singleton);
+
+// Usage
+ShopPanel shop = await _shopFactory.CreateAsync(); // loaded, instantiated, injected
+```
+
+---
+
+### 6. Deterministic PRNG
+
+Xorshift32-based `PseudoRandom` with isolated seeded state. Unlike `UnityEngine.Random`, state is reproducible — essential for replays, procedural generation and undo/redo determinism.
+
 ```csharp
 using Conkist.GDK.Utils;
-using UnityEngine;
 
-public class DeterministicSpawner : MonoBehaviour
+var prng = new PseudoRandom(seed: 12345);
+int value = prng.Range(1, 100); // same result on any machine, any run
+```
+
+---
+
+### 7. Native Platform Isolation
+
+Android (`.aar`) and iOS (`.mm`) code lives in platform-gated assemblies — compiled only for the matching target. Editor and desktop builds stay clean.
+
+- `Conkist.GDK.Android` — Android only
+- `Conkist.GDK.iOS` — iOS only
+
+---
+
+## Install
+
+Add to `Packages/manifest.json`:
+
+```json
 {
-    private PseudoRandom _prng;
-
-    private void Start()
-    {
-        // Inicializa o gerador com uma semente fixa
-        _prng = new PseudoRandom(seed: 12345);
-
-        // Gera 10 números idênticos em qualquer máquina
-        for (int i = 0; i < 10; i++)
-        {
-            int value = _prng.Range(1, 100);
-            Debug.Log($"Valor gerado: {value}");
-        }
-    }
+  "dependencies": {
+    "me.conkist.gdk.core": "https://github.com/Conkist/Conkist.GDK.Core.git",
+    "com.cysharp.unitask": "https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask#2.5.11"
+  }
 }
 ```
 
----
-
-## 7. Plataformas Nativas (Android e iOS)
-Localizações: `Runtime/Android/` e `Runtime/iOS/`
-
-O GDK Core agora encapsula as rotinas de compilação de código nativo (como `.aar` para Android e arquivos `.mm` para iOS) sob assemblies nativas específicas de plataforma. 
-
-* **`Conkist.GDK.Android`**: Compilado apenas quando o alvo da build é Android.
-* **`Conkist.GDK.iOS`**: Compilado apenas quando o alvo da build é iOS.
-
-Isso previne que código e callbacks nativos poluam outros assemblies durante testes de editor ou compilações para desktop, mantendo o fluxo estável.
+After cloning the parent repo, run `git submodule update --init --recursive`.
 
 ---
 
-## Como Instalar
+## Part of
 
-Adicione o pacote local no gerenciador de pacotes da Unity (`Packages/manifest.json`) sob as dependências:
-
-```json
-"me.conkist.gdk.core": "file:me.conkist.gdk.core"
-```
+**[Conkist GDK](https://github.com/Conkist)** — Game Development Kit for Unity · [conkist.me](https://conkist.me)
